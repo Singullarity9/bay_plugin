@@ -20,11 +20,11 @@ const API_HOST = APP_HOST + "/extension/api",
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-function post(a, t) {
+function post(a, t, options = {}) {
   return fetch(a, {
     method: "POST",
     body: JSON.stringify(t),
-    headers: DEFAULT_HEADERS,
+    headers: { ...options, ...DEFAULT_HEADERS },
   });
 }
 function put(a, t) {
@@ -34,16 +34,25 @@ function put(a, t) {
     headers: DEFAULT_HEADERS,
   });
 }
-function get(a) {
-  return fetch(a, { method: "GET", headers: DEFAULT_HEADERS });
+function get(a, options = {}) {
+  return fetch(a, {
+    method: "GET",
+    headers: { ...options, ...DEFAULT_HEADERS },
+  });
 }
+
 async function apiGetEmailsByDomain(a) {
   a = await (
-    await get(
-      API_HOST + CONTACTS_BY_DOMAIN + "?" + new URLSearchParams(a).toString()
+    await post(
+      "https://mktest.beiniuyun.cn/admin-api/marketing/resource-grab/extract-html",
+      a,
+      {
+        Authorization: accessToken,
+        ["tenant-id"]: tenantId,
+      }
     )
   ).json();
-  return a.data || a;
+  return a;
 }
 async function apiCreateCompany(a) {
   a = await (await post(API_HOST + COMPANIES_CREATE, a)).json();
@@ -132,7 +141,12 @@ async function apiGetSearchContacts(a) {
   ).json();
   return a.data || a;
 }
-async function apiGetUserBalance() {
-  var a = await (await get(API_HOST + USER_BALANCE)).json();
-  return a.data || a;
+async function apiGetUserBalance(headers) {
+  var a = await (
+    await get(
+      "https://mktest.beiniuyun.cn/admin-api/system/member/rights-user/get?rightsType=6",
+      headers
+    )
+  ).json();
+  return a;
 }

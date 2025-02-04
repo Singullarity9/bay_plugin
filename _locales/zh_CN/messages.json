@@ -87,7 +87,7 @@
     "message": "部门邮箱"
   },
   "doesntWorkOnFbText": {
-    "message": "您可以尝试使用我们 web 应用程序中的其他\u003Ca href='https://snovio.cn/knowledgebase/prospecting_tools/?lang=zh' target='_blank'>潜在客户开发工具\u003C/a>来寻找理想的销售线索。"
+    "message": "您可以尝试使用我们 web 应用程序中的其他\u003Ca href='https://mktest.beiniuyun.cn/' target='_blank'>潜在客户开发工具\u003C/a>来寻找理想的销售线索。"
   },
   "doesntWorkOnFbTitle": {
     "message": "此扩展程序不适用于 Facebook"
@@ -111,7 +111,7 @@
     "message": "未找到邮箱地址"
   },
   "emailsNotFoundText": {
-    "message": "无法找到与该公司相关的邮箱地址。您可以尝试使用 Snov.io web 应用程序中的其他\u003Ca href='https://snov.io/knowledgebase/prospecting_tools/' target='_blank'>潜在客户开发工具\u003C/a>来寻找理想的销售线索。"
+    "message": "无法找到与该公司相关的邮箱地址。您可以尝试访问\u003Ca href='https://mk.beiniuai.com/' target='_blank'>潜在客户开发工具\u003C/a>来寻找理想的销售线索。"
   },
   "emailsOnly": {
     "message": "仅邮箱地址"

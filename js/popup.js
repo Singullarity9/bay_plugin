@@ -4,7 +4,7 @@ const APP_HOST = "https://app.snov.io",
   NEW_VERSION_UPDATE_URL =
     "https://snov.io/knowledgebase/how-to-manually-update-li-prospect-finder-chrome-extension/",
   NO_CHANGING_STATUSES = ["error", "warning", "no_login", "no_login_twitter"],
-  ErrorNotAuthStatusCode = 1,
+  ErrorNotAuthStatusCode = 401,
   ErrorParametersStatusCode = 4,
   ErrorListIdStatusCode = 6,
   ErrorPaidStatusCode = 8;
@@ -33,7 +33,9 @@ const LS_LastPeopleListId = "lastPeopleListId",
 let isAuth = !1,
   lowBalance = !1,
   userLists_prospects,
-  userLists_companies;
+  userLists_companies,
+  accessToken,
+  tenantId;
 
 async function initPage(e = () => {}) {
   console.log("启动成功!!!");
@@ -41,10 +43,11 @@ async function initPage(e = () => {}) {
     localizeHtmlCommon(),
     addExtensionVersionToHeader(),
     addEventListenersToHeader(),
-    await handlePromotion(),
+    // await handlePromotion(),
     await getUserBalance(),
     addChromeSendMessageCheckNews(),
-    (await checkForNewExtensionVersion()) || e();
+    e();
+  // (await checkForNewExtensionVersion()) || e();
 }
 function getMainHost() {
   return "https://app.snov.io";
@@ -71,18 +74,12 @@ async function appendHeader() {
                 <a id='black-friday' target="_blank" class="header__content-link hidden">
                     <img src="../img/svg/gift.svg" alt="Black Friday promotion">
                 </a>  
-                <a id="companiesHistory" href="${APP_HOST}/companies/history" target="_blank" class="header__content-link" title="${getMessage(
-    "searchHistory",
-    "Сompany search history"
-  )}">
+                <a id="companiesHistory" href="https://mktest.beiniuyun.cn/#/marketing/resource/resource-users" target="_blank" class="header__content-link" title="${getMessage(
+                  "searchHistory",
+                  "Сompany search history"
+                )}">
                     <img src="../img/svg/history.svg" alt="history">
                 </a>   
-                <div id="help" class="header__content-link" title="${getMessage(
-                  "help",
-                  "Help"
-                )}">
-                    <img src="../img/svg/support.svg" alt="tutorial">
-                </div>
                 <div id="showLastNews" class="header__content-link hidden" title="${getMessage(
                   "unreadMessage",
                   "News and updates"
@@ -95,10 +92,10 @@ async function appendHeader() {
                 )}">
                     <img src="../img/svg/message.svg" alt="message">
                 </div>    
-                <a href="${APP_HOST}/register" target="_blank" class="header__content-link sign-up hidden regLink" id="signUpLink">
+                <a href="https://mktest.beiniuyun.cn/#/register" target="_blank" class="header__content-link sign-up hidden regLink" id="signUpLink">
                     ${getMessage("signUp", "Sign up")}
                 </a>   
-                <a href="${APP_HOST}/account/profile" target="_blank" class="header__content-link loginLink">
+                <a href="https://mktest.beiniuyun.cn/#/user/profile" target="_blank" class="header__content-link loginLink">
                     <img src="../img/svg/user.svg" alt="user-icon" title="${getMessage(
                       "myAccount",
                       "My account"
@@ -130,8 +127,10 @@ async function addChromeSendMessageCheckNews() {
       });
     }, 1e3);
   });
+  console.log("新闻检查");
 }
 async function checkForNewExtensionVersion() {
+  console.log("检查是否有新版本");
   var e = await chrome.runtime.sendMessage({ checkIfNewVersion: !0 });
   return (
     e &&
@@ -152,14 +151,8 @@ function addExtensionVersionToHeader() {
     $(".main-header").append(e);
 }
 function getAuthUrl(e) {
-  e =
-    APP_HOST +
-    "/" +
-    e +
-    "?ref=extension&signup_source=" +
-    getExtNameForGA() +
-    "&signup_page=extension_window";
-  return (e += "&lang=" + getLangForGA());
+  e = "https://mktest.beiniuyun.cn/#" + "/" + e;
+  return e;
 }
 async function handlePromotion() {
   chrome.runtime.sendMessage({ checkPromotionForPopup: !0 });
@@ -170,6 +163,7 @@ async function handlePromotion() {
   e &&
     ($("#black-friday").removeClass("hidden"),
     $("#black-friday").attr("href", t));
+  console.log("促销活动相关");
 }
 function showUserName() {
   localStorage.userName &&
@@ -236,6 +230,7 @@ function getLinkToList(e, t, a) {
     );
 }
 function showAvailableLists(e, t, a, n) {
+  console.log("展示可用列表", e, t, a, n);
   showStars();
   var s = document.getElementById(t);
   (e = JSON.parse(e)) || e.list
@@ -494,70 +489,82 @@ function searchEmailsO(e, t) {
     : void 0;
 }
 async function getUserBalance() {
-  var t = await apiGetUserBalance();
-  if (t.success)
-    return t.balance && t.pricing_plan_credits
-      ? ((isAuth = !0),
-        $("#next_button").attr("data-tariff", t.pricing_plan_type),
-        $("#companyInfoBody").attr("data-tariff", t.pricing_plan_type),
-        "pay" === t.pricing_plan_type &&
-          $("#next_button").attr({
-            disabled: !1,
-            title: getMessage(
-              "titleFindContacts",
-              "Search for employee data of selected companies"
-            ),
-          }),
-        addEventsAlerts(!0),
-        setUserProgress(
-          parseFloat(t.balance),
-          parseFloat(t.pricing_plan_credits)
-        ),
-        void (t.username && (localStorage.userName = t.username)))
-      : void (t.code === ErrorNotAuthStatusCode && showLoginBtn());
-  if (t?.code === ErrorNotAuthStatusCode)
-    showLoginBtn(),
-      toggleStatusAttribute(".main-body", "no_login"),
-      $(".main-footer").hide(),
-      $(".js-footer").addClass("hidden"),
-      $("#completeSearchTemplate").hide();
-  else {
-    var a =
-      !$("body").data("page") || "yelp-company" !== $("body").data("page");
-    if (t?.code === ErrorPaidStatusCode && a) {
-      let e = t.description;
-      (lowBalance = !0),
-        setUserProgress(
-          parseFloat(t.balance),
-          parseFloat(t.pricing_plan_credits)
-        ),
-        t.alias.includes("credits_reached") &&
-          ((a = APP_HOST + "/pricing-plans"),
-          (e += `<a href="${a}" target="_blank" class="pfe-button pfe-button--primary">
-                    <img src="../img/svg/star.svg" alt="" class="icon icon--up">
-                    ${getMessage("upgradePlan", "Upgrade my plan")}</a>`)),
-        toggleStatusAttribute(".main-body", "error"),
-        $("#domainEmails").css({ maxHeight: "250px" }),
-        showErrorContent(e),
-        $("#next_button").attr({
-          disabled: !0,
-          "data-tariff": t.pricing_plan_type,
-          title: getMessage(
-            "hintFreeTariffBS",
-            "Bulk search is only available to premium users"
-          ),
-        }),
-        addEventsAlerts(!1),
-        $(".people-list").addClass("people-list--small");
+  console.log("获取用户使用积分相关");
+  const headers = {};
+  await chrome.cookies.get(
+    { url: "https://mktest.beiniuyun.cn/", name: "TENANT_ID" },
+    function (e) {
+      console.log("第一次获取用户ID", e);
+      if (e) {
+        tenantId = e.value;
+        headers["tenant-id"] = e.value;
+        chrome.cookies.get(
+          { url: "https://mktest.beiniuyun.cn/", name: "ACCESS_TOKEN" },
+          async function (e) {
+            console.log("第一次获取用户TOKEN", e);
+            if (e) {
+              accessToken = `Bearer ${e.value}`;
+              headers["Authorization"] = `Bearer ${e.value}`;
+              var t = await apiGetUserBalance(headers);
+              console.log("获取用户权益信息", t);
+              if (t && t.code === 0) {
+                var a =
+                  !$("body").data("page") ||
+                  "yelp-company" !== $("body").data("page");
+                if (t?.code === ErrorPaidStatusCode && a) {
+                  let e = t.description;
+                  (lowBalance = !0),
+                    setUserProgress(
+                      parseFloat(t.balance),
+                      parseFloat(t.pricing_plan_credits)
+                    ),
+                    t.alias.includes("credits_reached") &&
+                      ((a = APP_HOST + "/pricing-plans"),
+                      (e += `<a href="${a}" target="_blank" class="pfe-button pfe-button--primary">
+                  <img src="../img/svg/star.svg" alt="" class="icon icon--up">
+                  ${getMessage("upgradePlan", "Upgrade my plan")}</a>`)),
+                    toggleStatusAttribute(".main-body", "error"),
+                    $("#domainEmails").css({ maxHeight: "250px" }),
+                    showErrorContent(e),
+                    $("#next_button").attr({
+                      disabled: !0,
+                      "data-tariff": t.pricing_plan_type,
+                      title: getMessage(
+                        "hintFreeTariffBS",
+                        "Bulk search is only available to premium users"
+                      ),
+                    }),
+                    addEventsAlerts(!1),
+                    $(".people-list").addClass("people-list--small");
+                }
+                $(".js-footer")
+                  .find("button")
+                  .each(function () {
+                    "yelp-company" !== $(this).data("page") &&
+                      "google-search-companies" !== $(this).data("page") &&
+                      $(this).attr("disabled", !0);
+                  });
+              } else {
+                console.log("登录失败");
+                showLoginBtn(),
+                  toggleStatusAttribute(".main-body", "no_login"),
+                  $(".main-footer").hide(),
+                  $(".js-footer").addClass("hidden"),
+                  $("#completeSearchTemplate").hide();
+              }
+            }
+          }
+        );
+      } else {
+        console.log("登录失败");
+        showLoginBtn(),
+          toggleStatusAttribute(".main-body", "no_login"),
+          $(".main-footer").hide(),
+          $(".js-footer").addClass("hidden"),
+          $("#completeSearchTemplate").hide();
+      }
     }
-    $(".js-footer")
-      .find("button")
-      .each(function () {
-        "yelp-company" !== $(this).data("page") &&
-          "google-search-companies" !== $(this).data("page") &&
-          $(this).attr("disabled", !0);
-      });
-  }
+  );
 }
 function setUserProgress(e, t) {
   var a = $("#userBalance"),
@@ -895,11 +902,12 @@ const API_HOST = APP_HOST + "/extension/api",
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-function post(a, t) {
+function post(a, t, options = {}) {
+  console.log("post请求头部参数", a, t, options);
   return fetch(a, {
     method: "POST",
     body: JSON.stringify(t),
-    headers: DEFAULT_HEADERS,
+    headers: { ...options, ...DEFAULT_HEADERS },
   });
 }
 function put(a, t) {
@@ -909,16 +917,28 @@ function put(a, t) {
     headers: DEFAULT_HEADERS,
   });
 }
-function get(a) {
-  return fetch(a, { method: "GET", headers: DEFAULT_HEADERS });
+function get(a, options = {}) {
+  console.log("get请求头部参数", options);
+  console.log({ ...options, ...DEFAULT_HEADERS });
+  return fetch(a, {
+    method: "GET",
+    headers: { ...options, ...DEFAULT_HEADERS },
+  });
 }
+
 async function apiGetEmailsByDomain(a) {
   a = await (
-    await get(
-      API_HOST + CONTACTS_BY_DOMAIN + "?" + new URLSearchParams(a).toString()
+    await post(
+      "https://mktest.beiniuyun.cn/admin-api/marketing/resource-grab/extract-html",
+      a,
+      {
+        Authorization: accessToken,
+        ["tenant-id"]: tenantId,
+      }
     )
   ).json();
-  return a.data || a;
+  console.log("apiGetEmailsByDomain返回数据", a);
+  return a;
 }
 async function apiCreateCompany(a) {
   a = await (await post(API_HOST + COMPANIES_CREATE, a)).json();
@@ -945,11 +965,13 @@ async function apiGetProspectsByCompany(a) {
   return a.data || a;
 }
 async function apiGetListsByUserId(a) {
+  console.log("获取用户数据调用接口查询参数", a);
   a = await (
     await get(
       API_HOST + LISTS_BY_USER + "?" + new URLSearchParams(a).toString()
     )
   ).json();
+  console.log("后端返回用户数据格式", a);
   return a.data || a;
 }
 async function apiGetListsByPeoplesIds(a) {
@@ -1007,20 +1029,25 @@ async function apiGetSearchContacts(a) {
   ).json();
   return a.data || a;
 }
-async function apiGetUserBalance() {
-  var a = await (await get(API_HOST + USER_BALANCE)).json();
-  return a.data || a;
+async function apiGetUserBalance(headers) {
+  var a = await (
+    await get(
+      "https://mktest.beiniuyun.cn/admin-api/system/member/rights-user/get?rightsType=6",
+      headers
+    )
+  ).json();
+  return a;
 }
 
 //校验登录
-const mainHost = "https://app.snov.io",
-  mHost = "app.snov.io";
+const mainHost = "https://mktest.beiniuyun.cn/";
 var bStartedCheckAuth = !1;
-function parseCheckLogin(e, t) {
+function parseCheckLogin(e, t, response, o) {
+  console.log("解析登录结果", e, t);
   function o(e) {
     chrome.cookies.set(
       {
-        name: "token",
+        name: "ACCESS_TOKEN",
         url: mainHost,
         value: e,
         expirationDate: new Date() / 1e3 + 1209600,
@@ -1033,117 +1060,88 @@ function parseCheckLogin(e, t) {
       }
     );
   }
-  var n = JSON.parse(e);
-  n && n.result
-    ? (n.name && n.name && (localStorage.userName = n.name),
-      n.token
-        ? chrome.cookies.set(
-            {
-              name: "token",
-              url: mainHost,
-              value: n.token,
-              expirationDate: new Date() / 1e3 + 1209600,
-              httpOnly: !0,
-              secure: !0,
-              sameSite: "no_restriction",
-            },
-            function (e) {
-              chrome.cookies.get(
-                { url: mainHost, name: "token" },
-                function (e) {
-                  e && e.value;
-                }
-              ),
-                e
-                  ? (bStartedCheckAuth = !1)
-                  : chrome.cookies.set(
-                      {
-                        name: "token",
-                        url: mainHost,
-                        value: n.token,
-                        expirationDate: new Date() / 1e3 + 1209600,
-                        httpOnly: !0,
-                        secure: !0,
-                        sameSite: "no_restriction",
-                      },
-                      function (e) {
-                        e
-                          ? (bStartedCheckAuth = !1)
-                          : setTimeout(o, 1e3, n.token);
-                      }
-                    );
-            }
-          )
-        : (bStartedCheckAuth = !1),
-      n.fingerprint &&
-        chrome.cookies.set({
-          name: "fingerprint",
-          url: mainHost,
-          value: n.fingerprint,
-          expirationDate: new Date() / 1e3 + 1209600,
-          httpOnly: !0,
-          secure: !0,
-        }),
-      n.name && t && t())
-    : (chrome.cookies.remove({ name: "token", url: mainHost }),
-      chrome.cookies.remove({ name: "selector", url: mainHost }),
-      t && t());
+  var n = JSON.parse(response);
+  console.log("解析响应信息", n);
+  if (!(n && n.code === 0)) {
+    (bStartedCheckAuth = !1), e && o && o();
+  }
 }
 function checkLogin(e, t, o) {
+  console.log("开始检查登录", e, t, o);
   var n = "",
     a =
-      ("" !== e && "" !== t && (n = "selector=" + e + "&token=" + t),
+      ("" !== e && "" !== t && (n = "TENANT_ID=" + e + "&ACCESS_TOKEN=" + t),
       new XMLHttpRequest());
-  a.open("POST", mainHost + "/api/checkAuth", !0),
+  a.open(
+    "GET",
+    "https://mktest.beiniuyun.cn/admin-api/system/member/rights-user/get?rightsType=6",
+    !0
+  ),
     (a.withCredentials = !0),
-    a.overrideMimeType("text/xml"),
-    a.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"),
+    a.overrideMimeType("text/xml");
+  if (e && t) {
+    a.setRequestHeader("tenant-id", `${e}`);
+    a.setRequestHeader("Authorization", `Bearer ${t}`);
+  }
+  a.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"),
     (a.onreadystatechange = function () {
       4 === a.readyState &&
         (200 === a.status
-          ? parseCheckLogin(a.responseText, o)
+          ? parseCheckLogin(e, t, a.responseText, o)
           : (localStorage[new Date().toString() + "_checkAuthPost_ERROR"] =
               a.statusText));
     }),
     a.send(n);
 }
 function checkAuthenticationUpdate(t) {
-  var o = (localStorage.userName = ""),
+  console.log("更新检查登录", t);
+  var o = (localStorage.userName = "用户名称U"),
     n = "";
   chrome.cookies &&
     !bStartedCheckAuth &&
     ((bStartedCheckAuth = !0),
-    chrome.cookies.get({ url: mainHost, name: "selector" }, function (e) {
+    chrome.cookies.get({ url: mainHost, name: "TENANT_ID" }, function (e) {
+      console.log("获取用户ID", e);
       e
         ? ((o = e.value),
-          chrome.cookies.get({ url: mainHost, name: "token" }, function (e) {
-            e ? (n = e.value) : checkLogin(o, n, t),
-              o && n && checkLogin(o, n, t);
-          }))
+          chrome.cookies.get(
+            { url: mainHost, name: "ACCESS_TOKEN" },
+            function (e) {
+              console.log("获取用户TOKEN", e);
+              e ? (n = e.value) : checkLogin(o, n, t),
+                o && n && checkLogin(o, n, t);
+            }
+          ))
         : checkLogin(o, n, t);
     }));
 }
 function checkAuthentication() {
+  console.log("验证用户登录");
   localStorage.host = mainHost;
   var t = (localStorage.userName = ""),
     o = "";
   chrome.cookies &&
     !bStartedCheckAuth &&
     ((bStartedCheckAuth = !0),
-    chrome.cookies.get({ url: mainHost, name: "selector" }, function (e) {
+    chrome.cookies.get({ url: mainHost, name: "TENANT_ID" }, function (e) {
       e
         ? ((t = e.value),
-          chrome.cookies.get({ url: mainHost, name: "token" }, function (e) {
-            e && (o = e.value), checkLogin(t, o);
-          }))
+          chrome.cookies.get(
+            { url: mainHost, name: "ACCESS_TOKEN" },
+            function (e) {
+              e && (o = e.value), checkLogin(t, o);
+            }
+          ))
         : checkLogin(t, o);
     }));
 }
 chrome.runtime &&
   (chrome.runtime.onStartup.addListener(function () {
+    console.log("启动时触发");
     checkAuthentication();
   }),
   chrome.runtime.onInstalled.addListener(function () {
+    console.log("安装时触发");
     checkAuthentication();
   }));
 
@@ -1303,6 +1301,8 @@ function localizeHtmlCommon() {
       $(".pfe-select__selected").text(
         getMessage("createSelectList", "Create or select list")
       );
+  console.log(window);
+  console.log("本地国际化成功");
 }
 function showErrorGlobal(e, t) {
   $("#errorMessage").html(`<div>
@@ -1502,6 +1502,7 @@ async function loadUserLists(e, t) {
   }
 }
 async function updateUserLists(e, t) {
+  console.log("获取用户类型", e);
   var s = await apiGetListsByUserId({ type: e });
   s?.errors ||
     (s?.list &&
@@ -1616,6 +1617,7 @@ function showUpgradePlanError(e, t, n) {
   (n ? $(n) : ($("#prospectsContainer").html(a), $("#domainEmails"))).html(a);
 }
 function updateCompanyTemplate(e, t) {
+  console.log("更新公司信息", e, t);
   if ("" !== e.name) {
     var n = $("#companyInfoBody");
     n.find(".js-contact-name").append(e.name);
@@ -1626,9 +1628,9 @@ function updateCompanyTemplate(e, t) {
           $(".js-contact-link-li").attr("href", a.link).removeClass("hidden"),
         "twitter" === a.source &&
           $(".js-contact-link-tw").attr("href", a.link).removeClass("hidden");
-    e.img && n.find(".js-company-logo").attr("src", e.img),
-      e.industry &&
-        n.find(".js-company-industry").append(e.industry).removeClass("hidden"),
+    // e.img && n.find(".js-company-logo").attr("src", e.img),
+    e.industry &&
+      n.find(".js-company-industry").append(e.industry).removeClass("hidden"),
       e.address &&
         n.find(".js-contact-location").append(e.address).removeClass("hidden"),
       e.size &&
@@ -1847,10 +1849,31 @@ const SELECT_ALL_EMAILS = "selectAllEmails",
 let $btnSendEmailList = $("#" + BTN_SEND_EMAIL_LIST),
   // 保存潜在客户按钮
   $btnSendProspectList = $("#" + BTN_SEND_PROSPECT_LIST);
-function initPopupTabsQuery() {
-  chrome.tabs.query({ active: !0, currentWindow: !0 }, (e) => {
+
+// 直接定义函数以供 executeScript 使用
+function getPageHTML() {
+  return document.documentElement.outerHTML;
+}
+
+async function initPopupTabsQuery() {
+  console.log("初始化爬取信息展示页面");
+
+  chrome.tabs.query({ active: !0, currentWindow: !0 }, async (e) => {
+    let htmlContent = "";
     setEventsOnFooterDropdown(), addHandlerToUserListsLoaded();
     const s = e[0];
+    const result = await chrome.scripting.executeScript({
+      target: { tabId: s.id },
+      function: getPageHTML,
+    });
+
+    // 处理返回的 HTML 数据
+    if (result && result.length > 0) {
+      console.log("输出html内容", result[0].result);
+      htmlContent = result[0].result;
+    }
+
+    console.log("标签页信息", s);
     currentHost = tldjs.getDomain(s.url);
     let a = document.createElement("a");
     (a.href = s.url),
@@ -1863,8 +1886,8 @@ function initPopupTabsQuery() {
               async (e) => {
                 let t = [];
                 e && (t = searchEmailsO(e.data, currentHost)),
-                  await loadUserLists("people"),
-                  await getEmailsByDomain(s.url, t),
+                  // await loadUserLists("people"),
+                  await getEmailsByDomain(s.url, t, htmlContent),
                   await getCompanyByDomain(a.protocol + "//" + a.host);
                 e =
                   ($(".pfe__radio-select-panel")[0]?.offsetHeight || 0) +
@@ -1904,25 +1927,20 @@ function checkRedirectForSpecialSites(e) {
         localStorage.removeItem(LS_referrer),
       "");
 }
-async function getEmailsByDomain(e, t = []) {
-  e = await apiGetEmailsByDomain({ link: e });
-  0 === e.result
+async function getEmailsByDomain(e, t = [], htmlContent) {
+  e = await apiGetEmailsByDomain({ url: e, html: htmlContent });
+  console.log("响应邮箱信息", e);
+  0 !== e.code
     ? getEmailsErrorProcessing(e)
-    : ((!1 !== e.auth && localStorage.userName) || authProcessing(e),
-      (e && e.list) || 0 !== t.length
-        ? e.disabled
-          ? ((isHiddenDomain = !0), showNotFoundMessage())
-          : ((search_id = e.searchId),
-            e.list.length || 0 !== t.length
-              ? ((totalEmails = e.total),
-                (search_auth = e.auth),
-                await parseEmailList(e, t))
-              : (await searchEmailsInBing(currentHost),
-                Object.keys(emailList).length || showNotFoundMessage()))
-        : showNotFoundMessage());
+    : 0 === e.data.length
+    ? ((isHiddenDomain = !0), showNotFoundMessage())
+    : ((totalEmails = e.data.length),
+      (search_auth = true),
+      await parseEmailList(e, t));
 }
 async function getCompanyByDomain(e) {
   try {
+    console.log("根据域名获取公司信息并更新视图", e);
     var t = await apiGetCompanyInfo({ url: e });
     $contentPage.removeClass("hidden"),
       $searchBlock.addClass("hidden"),
@@ -1953,6 +1971,7 @@ async function getProspectsByCompany() {
 }
 function addHandlerToUserListsLoaded() {
   $(window).on("userListsLoaded", function (e, t, s, a) {
+    console.log("用户列表事件触发");
     (userLists_prospects = s),
       (maDefaultListId = localStorage[LS_LastPeopleListId] || 0),
       showAvailableLists(
@@ -1991,15 +2010,14 @@ function addHandlerToUserListsLoaded() {
   });
 }
 async function parseEmailList(e, t = []) {
-  var s = addEmailsFromPage(e.list, t);
+  var s = addEmailsFromPage(e.data, t);
   for (let e = 0; e < s.length; e++) emailList["el" + e] = s[e];
   (selectedEmails = Object.values(emailList).map((e) => e.email)),
     chrome.runtime.sendMessage({ type: "ga", action: "domainSearchShow" }),
-    emailList && Object.keys(emailList).length < 10
-      ? await searchEmailsInBing(currentHost)
-      : renderEmails(selectedEmails, e.searchId);
+    renderEmails(selectedEmails, e.searchId);
 }
 function addEmailsFromPage(t, s = []) {
+  console.log("邮箱列表展示", t);
   if (0 !== s.length) {
     var a = t.map((e) => e.email.toLowerCase());
     let e = 0;
@@ -2010,6 +2028,7 @@ function addEmailsFromPage(t, s = []) {
   return t;
 }
 function authProcessing() {
+  console.log("开始校验");
   (localStorage.userName = ""),
     checkAuthenticationUpdate(function () {
       showUserName();

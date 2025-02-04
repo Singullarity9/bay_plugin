@@ -12,11 +12,11 @@
       <!-- 顶部导航栏=》通过js动态插入页面代码 -->
       <header class="main-header"></header>
 
-      <div class="credits-bar" id="userBalanceBlock">
+      <!-- <div class="credits-bar" id="userBalanceBlock">
         <div class="credits-bar__back"></div>
         <div class="credits-bar__progress hidden" id="userBalanceBar"></div>
         <div id="userBalance" class="credits-bar__used"></div>
-      </div>
+      </div> -->
 
       <div class="main-body pb-0">
         <div
@@ -62,13 +62,13 @@
         id="companyInfoBody"
       >
         <div class="company-info closed" id="companyBlock">
-          <div
+          <!-- <div
             class="pfe-alert__toggle js-toggle-alert closed"
             data-key="company_already_saved"
-          ></div>
-          <div class="company-logo-container">
+          ></div> -->
+          <!-- <div class="company-logo-container">
             <img class="company-logo js-company-logo" src="" alt="" />
-          </div>
+          </div> -->
           <div class="company-content">
             <div class="company" id="company-header">
               <div class="company-name__container">
@@ -181,9 +181,9 @@
         </section>
       </div>
       <!-- 搜索信息保存设置区 -->
-      <section class="main-footer footer-body js-footer">
+      <!-- <section class="main-footer footer-body js-footer">
         <div id="dropdownListContainer" class="pfe-select">
-          <!-- 选着存储用户列表和刷新展示区 -->
+          ##选着存储用户列表和刷新展示区
           <div class="pfe-select__static js-toggle-new-list">
             <span
               id="selectedItemUsersPeopleList"
@@ -195,7 +195,7 @@
               data-translate-title="refreshList"
             ></div>
           </div>
-          <!-- 存储列表选择下拉菜单 -->
+          ##存储列表选择下拉菜单
           <div class="pfe-select__dropdown hidden js-dropdown-list-container">
             <div
               class="pfe-select__create-list-button js-show-add-new-list"
@@ -209,7 +209,7 @@
               id="userPeopleSelect"
             ></div>
           </div>
-          <!-- 新建列表输入框 -->
+          ##新建列表输入框 
           <div
             class="pfe-select__create-list-input hidden js-add-new-list-container"
           >
@@ -235,7 +235,7 @@
         >
           保存
         </button>
-        <!-- 保存成功后跳转列表链接 -->
+        ##保存成功后跳转列表链接 
         <a
           class="pfe-button pfe-button--with-icon pfe-button--thirdy hidden"
           id="goToListEmail"
@@ -267,7 +267,7 @@
           >转到列表
           <img src="../img/svg/arrow-corner.svg" alt="go-to-list-arrow" />
         </a>
-      </section>
+      </section> -->
     </div>
     <div class="hidden">
       <!-- 域名邮箱展示列表 -->
@@ -480,7 +480,15 @@
     <script src="../js/libs/bootstrap.min.js"></script>
     <script src="../js/libs/tld.js"></script>
     <script src="../js/defaultValuesLang.js"></script>
+    <script src="../js/constants.js"></script>
+    <script src="../js/utils/base.js"></script>
+    <script src="../js/common/common.js"></script>
+    <script src="../js/apiMethods.js"></script>
+    <script src="../js/CheckAuth.js"></script>
+    <script src="../js/common/commonHtml.js"></script>
+    <script src="../js/common/userLists.js"></script>
 
+    <script src="../js/popupHtml.js"></script>
     <script src="../js/popup.js"></script>
   </body>
 </html>

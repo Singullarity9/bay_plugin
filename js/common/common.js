@@ -5,16 +5,20 @@ const LS_LastPeopleListId = "lastPeopleListId",
 let isAuth = !1,
   lowBalance = !1,
   userLists_prospects,
-  userLists_companies;
+  userLists_companies,
+  accessToken,
+  tenantId;
+
 async function initPage(e = () => {}) {
   appendHeader(),
     localizeHtmlCommon(),
     addExtensionVersionToHeader(),
     addEventListenersToHeader(),
-    await handlePromotion(),
+    // await handlePromotion(),
     await getUserBalance(),
     addChromeSendMessageCheckNews(),
-    (await checkForNewExtensionVersion()) || e();
+    e();
+  // (await checkForNewExtensionVersion()) || e();
 }
 function getMainHost() {
   return "https://app.snov.io";
@@ -41,18 +45,12 @@ async function appendHeader() {
                 <a id='black-friday' target="_blank" class="header__content-link hidden">
                     <img src="../img/svg/gift.svg" alt="Black Friday promotion">
                 </a>  
-                <a id="companiesHistory" href="${APP_HOST}/companies/history" target="_blank" class="header__content-link" title="${getMessage(
-    "searchHistory",
-    "Сompany search history"
-  )}">
+                <a id="companiesHistory" href="https://mktest.beiniuyun.cn/#/marketing/resource/resource-users" target="_blank" class="header__content-link" title="${getMessage(
+                  "searchHistory",
+                  "Сompany search history"
+                )}">
                     <img src="../img/svg/history.svg" alt="history">
                 </a>   
-                <div id="help" class="header__content-link" title="${getMessage(
-                  "help",
-                  "Help"
-                )}">
-                    <img src="../img/svg/support.svg" alt="tutorial">
-                </div>
                 <div id="showLastNews" class="header__content-link hidden" title="${getMessage(
                   "unreadMessage",
                   "News and updates"
@@ -65,10 +63,10 @@ async function appendHeader() {
                 )}">
                     <img src="../img/svg/message.svg" alt="message">
                 </div>    
-                <a href="${APP_HOST}/register" target="_blank" class="header__content-link sign-up hidden regLink" id="signUpLink">
+                <a href="https://mktest.beiniuyun.cn/#/register" target="_blank" class="header__content-link sign-up hidden regLink" id="signUpLink">
                     ${getMessage("signUp", "Sign up")}
                 </a>   
-                <a href="${APP_HOST}/account/profile" target="_blank" class="header__content-link loginLink">
+                <a href="https://mktest.beiniuyun.cn/#/user/profile" target="_blank" class="header__content-link loginLink">
                     <img src="../img/svg/user.svg" alt="user-icon" title="${getMessage(
                       "myAccount",
                       "My account"
@@ -122,14 +120,8 @@ function addExtensionVersionToHeader() {
     $(".main-header").append(e);
 }
 function getAuthUrl(e) {
-  e =
-    APP_HOST +
-    "/" +
-    e +
-    "?ref=extension&signup_source=" +
-    getExtNameForGA() +
-    "&signup_page=extension_window";
-  return (e += "&lang=" + getLangForGA());
+  e = "https://mktest.beiniuyun.cn/#" + "/" + e;
+  return e;
 }
 async function handlePromotion() {
   chrome.runtime.sendMessage({ checkPromotionForPopup: !0 });
@@ -464,70 +456,76 @@ function searchEmailsO(e, t) {
     : void 0;
 }
 async function getUserBalance() {
-  var t = await apiGetUserBalance();
-  if (t.success)
-    return t.balance && t.pricing_plan_credits
-      ? ((isAuth = !0),
-        $("#next_button").attr("data-tariff", t.pricing_plan_type),
-        $("#companyInfoBody").attr("data-tariff", t.pricing_plan_type),
-        "pay" === t.pricing_plan_type &&
-          $("#next_button").attr({
-            disabled: !1,
-            title: getMessage(
-              "titleFindContacts",
-              "Search for employee data of selected companies"
-            ),
-          }),
-        addEventsAlerts(!0),
-        setUserProgress(
-          parseFloat(t.balance),
-          parseFloat(t.pricing_plan_credits)
-        ),
-        void (t.username && (localStorage.userName = t.username)))
-      : void (t.code === ErrorNotAuthStatusCode && showLoginBtn());
-  if (t?.code === ErrorNotAuthStatusCode)
-    showLoginBtn(),
-      toggleStatusAttribute(".main-body", "no_login"),
-      $(".main-footer").hide(),
-      $(".js-footer").addClass("hidden"),
-      $("#completeSearchTemplate").hide();
-  else {
-    var a =
-      !$("body").data("page") || "yelp-company" !== $("body").data("page");
-    if (t?.code === ErrorPaidStatusCode && a) {
-      let e = t.description;
-      (lowBalance = !0),
-        setUserProgress(
-          parseFloat(t.balance),
-          parseFloat(t.pricing_plan_credits)
-        ),
-        t.alias.includes("credits_reached") &&
-          ((a = APP_HOST + "/pricing-plans"),
-          (e += `<a href="${a}" target="_blank" class="pfe-button pfe-button--primary">
-                    <img src="../img/svg/star.svg" alt="" class="icon icon--up">
-                    ${getMessage("upgradePlan", "Upgrade my plan")}</a>`)),
-        toggleStatusAttribute(".main-body", "error"),
-        $("#domainEmails").css({ maxHeight: "250px" }),
-        showErrorContent(e),
-        $("#next_button").attr({
-          disabled: !0,
-          "data-tariff": t.pricing_plan_type,
-          title: getMessage(
-            "hintFreeTariffBS",
-            "Bulk search is only available to premium users"
-          ),
-        }),
-        addEventsAlerts(!1),
-        $(".people-list").addClass("people-list--small");
+  const headers = {};
+  await chrome.cookies.get(
+    { url: "https://mktest.beiniuyun.cn/", name: "TENANT_ID" },
+    function (e) {
+      if (e) {
+        tenantId = e.value;
+        headers["tenant-id"] = e.value;
+        chrome.cookies.get(
+          { url: "https://mktest.beiniuyun.cn/", name: "ACCESS_TOKEN" },
+          async function (e) {
+            if (e) {
+              accessToken = `Bearer ${e.value}`;
+              headers["Authorization"] = `Bearer ${e.value}`;
+              var t = await apiGetUserBalance(headers);
+              if (t && t.code === 0) {
+                var a =
+                  !$("body").data("page") ||
+                  "yelp-company" !== $("body").data("page");
+                if (t?.code === ErrorPaidStatusCode && a) {
+                  let e = t.description;
+                  (lowBalance = !0),
+                    setUserProgress(
+                      parseFloat(t.balance),
+                      parseFloat(t.pricing_plan_credits)
+                    ),
+                    t.alias.includes("credits_reached") &&
+                      ((a = APP_HOST + "/pricing-plans"),
+                      (e += `<a href="${a}" target="_blank" class="pfe-button pfe-button--primary">
+                  <img src="../img/svg/star.svg" alt="" class="icon icon--up">
+                  ${getMessage("upgradePlan", "Upgrade my plan")}</a>`)),
+                    toggleStatusAttribute(".main-body", "error"),
+                    $("#domainEmails").css({ maxHeight: "250px" }),
+                    showErrorContent(e),
+                    $("#next_button").attr({
+                      disabled: !0,
+                      "data-tariff": t.pricing_plan_type,
+                      title: getMessage(
+                        "hintFreeTariffBS",
+                        "Bulk search is only available to premium users"
+                      ),
+                    }),
+                    addEventsAlerts(!1),
+                    $(".people-list").addClass("people-list--small");
+                }
+                $(".js-footer")
+                  .find("button")
+                  .each(function () {
+                    "yelp-company" !== $(this).data("page") &&
+                      "google-search-companies" !== $(this).data("page") &&
+                      $(this).attr("disabled", !0);
+                  });
+              } else {
+                showLoginBtn(),
+                  toggleStatusAttribute(".main-body", "no_login"),
+                  $(".main-footer").hide(),
+                  $(".js-footer").addClass("hidden"),
+                  $("#completeSearchTemplate").hide();
+              }
+            }
+          }
+        );
+      } else {
+        showLoginBtn(),
+          toggleStatusAttribute(".main-body", "no_login"),
+          $(".main-footer").hide(),
+          $(".js-footer").addClass("hidden"),
+          $("#completeSearchTemplate").hide();
+      }
     }
-    $(".js-footer")
-      .find("button")
-      .each(function () {
-        "yelp-company" !== $(this).data("page") &&
-          "google-search-companies" !== $(this).data("page") &&
-          $(this).attr("disabled", !0);
-      });
-  }
+  );
 }
 function setUserProgress(e, t) {
   var a = $("#userBalance"),

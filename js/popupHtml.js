@@ -112,7 +112,7 @@ function updateCompanyTemplate(e, t) {
           $(".js-contact-link-li").attr("href", a.link).removeClass("hidden"),
         "twitter" === a.source &&
           $(".js-contact-link-tw").attr("href", a.link).removeClass("hidden");
-    e.img && n.find(".js-company-logo").attr("src", e.img),
+    //e.img && n.find(".js-company-logo").attr("src", e.img),
       e.industry &&
         n.find(".js-company-industry").append(e.industry).removeClass("hidden"),
       e.address &&
